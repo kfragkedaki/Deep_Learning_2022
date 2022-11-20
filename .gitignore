@@ -130,3 +130,5 @@ dmypy.json
 
 */*.gz
 */*.pkl
+Assigment1/other/
+.gitignore
