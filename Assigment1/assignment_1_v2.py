@@ -88,7 +88,7 @@ def backward_pass_vectorized(X, t_index, V, context):
     return dV, dW, db, dc
 
 # train data
-def train(x_train, t_index, x_val, t_val, num_mcls, nr_hlayers, epochs, alpha, batch_size=1):
+def train(x_train, t_index, x_val, t_val, num_mcls, nr_hlayers, epochs, alpha, batch_size=1, plot_batches=True):
     (W, V, b, c) = initialize_weights_vector(x_train.shape[1], nr_classes=num_mcls, nr_hlayers=nr_hlayers)
 
     # In this case mini batch becomes same as batch gradient descent
@@ -108,12 +108,13 @@ def train(x_train, t_index, x_val, t_val, num_mcls, nr_hlayers, epochs, alpha, b
 
             (W, V, b, c) = update_weights(W, V, b, c, gradients, alpha=alpha)
 
-            # loss and accuracy for batch data
-            context = forward_pass_vectorized(batch_X, W, V, b, c)
-            _, _, _, pred = context
-            loss, acc = compute_loss_acc(pred, batch_t_index)
-            epochs_batch_loss.append(loss)
-            epochs_batch_acc.append(acc)
+            if plot_batches:
+                # loss and accuracy for batch data
+                context = forward_pass_vectorized(batch_X, W, V, b, c)
+                _, _, _, pred = context
+                loss, acc = compute_loss_acc(pred, batch_t_index)
+                epochs_batch_loss.append(loss)
+                epochs_batch_acc.append(acc)
 
         # train
         context = forward_pass_vectorized(x_train, W, V, b, c)
@@ -148,6 +149,7 @@ def test_vectorized_version():
 
     context = forward_pass_vectorized(X, W, V, b, c)
     gradients = backward_pass_vectorized(X, t_index, V, context)
+    dV, dW, db, dc = gradients
 
     (W, V, b, c) = update_weights(W, V, b, c, gradients)
 
@@ -172,17 +174,21 @@ def test_vectorized_version():
 ###
 def run(dataset, alpha, batch_size, nr_hlayers=300, epochs=5):
     (x_train, y_train), (x_val, y_val), num_mcls = dataset
-    x_train, x_val = normalize_data(x_train), normalize_data(x_val) # normalize data
+    x_train, x_val = normalize_data(x_train), normalize_data(x_val)  # normalize data
 
     epochs_loss_train, epochs_acc_train, \
-        epochs_loss_val, epochs_acc_val, \
-        epochs_batch_loss, epochs_batch_acc = \
+    epochs_loss_val, epochs_acc_val, \
+    epochs_batch_loss, epochs_batch_acc = \
         train(x_train, y_train, x_val, y_val, num_mcls, nr_hlayers, epochs, alpha, batch_size)
 
     print("Final Train Loss: {} - Final Train Accuracy: {}".format(
         round(epochs_loss_train[-1], 5), round(epochs_acc_train[-1], 5)))
     print("Final Validation Loss: {} - Final Validation Accuracy: {}".format(
         round(epochs_loss_val[-1], 5), round(epochs_acc_val[-1], 5)))
+
+    return (epochs_loss_train, epochs_acc_train, \
+            epochs_loss_val, epochs_acc_val, \
+            epochs_batch_loss, epochs_batch_acc)
 
 # main function to run different experiments for Mnist dataset
 if __name__ == "__main__":
@@ -194,8 +200,8 @@ if __name__ == "__main__":
 
     # 1.
     # Experiment one: Compare the training loss per epoch to the validation loss per epoch
-    alpha, batch_size = 0.01, 1000
-    run(dataset, alpha, batch_size)
+    # alpha, batch_size = 0.01, 1000
+    # run(dataset, alpha, batch_size)
 
     # 2.
     # Experiment two: Test
@@ -212,7 +218,9 @@ if __name__ == "__main__":
     # 4.
     # train on the final network on the full training data and evaluate to the canonical test set
     # switch final to True
-    # dataset_predict = data.load_mnist(final=True)
-    # nr_hlayers, epochs, alpha, batch_size = final_parameters
-    # run(dataset, epochs, alpha, batch_size)
+    final_parameters = 300, 5, 0.01, 550
+    dataset_predict = data.load_mnist(final=True)
+    print('dataset_predict.shape', dataset_predict[0][0].shape, dataset_predict[1][0].shape)
+    nr_hlayers, epochs, alpha, batch_size = final_parameters
+    run(dataset_predict, alpha=alpha, batch_size=batch_size, epochs=epochs)
 
