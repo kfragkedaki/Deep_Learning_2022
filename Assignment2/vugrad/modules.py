@@ -11,6 +11,8 @@ class Linear(Module):
     def __init__(self, input_size, output_size, init='glorot'):
         super().__init__()
 
+        w = np.zeros(output_size, input_size)
+
         # weights of the matrix transformation
         if init == 'he':
             he_std = np.sqrt(2.0 / (input_size)) # scalar for He normal init
@@ -21,7 +23,7 @@ class Linear(Module):
         elif init == 'glorot_uniform':
             glorot_uni_std = np.sqrt(6.0 / (input_size + output_size)) # scalar for Glorot uniform init
             w = np.random.randn(output_size, input_size) * glorot_uni_std
-        else:
+        elif init == 'glorot':
             glorot_std = np.sqrt(2.0 / (input_size + output_size)) # scalar for Glorot normal init
             w = np.random.randn(output_size, input_size) * glorot_std
             
